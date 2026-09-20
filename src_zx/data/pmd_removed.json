@@ -1,0 +1,182 @@
+[
+  {
+    "pmd_start": "44BB",
+    "pmd_end_exclusive": "47A3",
+    "bytes": 744,
+    "reason": "Texty původního menu, nastavení a prohry"
+  },
+  {
+    "pmd_start": "4BD6",
+    "pmd_end_exclusive": "4BE3",
+    "bytes": 13,
+    "reason": "Nepoužívaný vedlejší vstup PMD maskování"
+  },
+  {
+    "pmd_start": "4C3E",
+    "pmd_end_exclusive": "4C5D",
+    "bytes": 31,
+    "reason": "Původní mazání obrazovky"
+  },
+  {
+    "pmd_start": "4D63",
+    "pmd_end_exclusive": "4D7B",
+    "bytes": 24,
+    "reason": "Původní zvuk"
+  },
+  {
+    "pmd_start": "4D7E",
+    "pmd_end_exclusive": "4DB6",
+    "bytes": 56,
+    "reason": "Zobrazení hodin"
+  },
+  {
+    "pmd_start": "4DB9",
+    "pmd_end_exclusive": "4E1A",
+    "bytes": 97,
+    "reason": "Tisk času, čísel a řetězců PMD"
+  },
+  {
+    "pmd_start": "4EAA",
+    "pmd_end_exclusive": "4ED1",
+    "bytes": 39,
+    "reason": "Čekání na PMD klávesnici"
+  },
+  {
+    "pmd_start": "4ED4",
+    "pmd_end_exclusive": "4EF3",
+    "bytes": 31,
+    "reason": "Čtení PMD klávesnice"
+  },
+  {
+    "pmd_start": "4EF6",
+    "pmd_end_exclusive": "4F0A",
+    "bytes": 20,
+    "reason": "Čtení kláves původního menu"
+  },
+  {
+    "pmd_start": "4F0D",
+    "pmd_end_exclusive": "4F9E",
+    "bytes": 145,
+    "reason": "Původní tisk znaků"
+  },
+  {
+    "pmd_start": "4FA1",
+    "pmd_end_exclusive": "50ED",
+    "bytes": 332,
+    "reason": "Dokončení tisku, časovač, hudba a budík"
+  },
+  {
+    "pmd_start": "50F2",
+    "pmd_end_exclusive": "5102",
+    "bytes": 16,
+    "reason": "Pomocné části PMD časovače"
+  },
+  {
+    "pmd_start": "5287",
+    "pmd_end_exclusive": "52B8",
+    "bytes": 49,
+    "reason": "Čekání PMD a spuštění hudby"
+  },
+  {
+    "pmd_start": "5374",
+    "pmd_end_exclusive": "5390",
+    "bytes": 28,
+    "reason": "Původní počítání navštívených místností"
+  },
+  {
+    "pmd_start": "53C6",
+    "pmd_end_exclusive": "53F9",
+    "bytes": 51,
+    "reason": "Nastavení hodin a budíku"
+  },
+  {
+    "pmd_start": "53FC",
+    "pmd_end_exclusive": "551D",
+    "bytes": 289,
+    "reason": "Nastavení času, kláves a joysticku PMD"
+  },
+  {
+    "pmd_start": "55F3",
+    "pmd_end_exclusive": "561E",
+    "bytes": 43,
+    "reason": "Původní tisk desítkových čísel"
+  },
+  {
+    "pmd_start": "562E",
+    "pmd_end_exclusive": "5637",
+    "bytes": 9,
+    "reason": "PMD joystick"
+  },
+  {
+    "pmd_start": "563A",
+    "pmd_end_exclusive": "566D",
+    "bytes": 51,
+    "reason": "PMD klávesnice a přepínání zvuku"
+  },
+  {
+    "pmd_start": "56F4",
+    "pmd_end_exclusive": "5731",
+    "bytes": 61,
+    "reason": "Kopírování obdélníků na PMD obrazovku"
+  },
+  {
+    "pmd_start": "596D",
+    "pmd_end_exclusive": "59B3",
+    "bytes": 70,
+    "reason": "Náhodné odkrývání PMD obrazu"
+  },
+  {
+    "pmd_start": "59B6",
+    "pmd_end_exclusive": "59D9",
+    "bytes": 35,
+    "reason": "Původní mazání pracovního obrazu"
+  },
+  {
+    "pmd_start": "5DAC",
+    "pmd_end_exclusive": "5E31",
+    "bytes": 133,
+    "reason": "Kreslení obrázků původního menu"
+  },
+  {
+    "pmd_start": "5E34",
+    "pmd_end_exclusive": "5E65",
+    "bytes": 49,
+    "reason": "Obsluha původního menu"
+  },
+  {
+    "pmd_start": "5F0C",
+    "pmd_end_exclusive": "5F1C",
+    "bytes": 16,
+    "reason": "Původní kontrolní součet"
+  },
+  {
+    "pmd_start": "5F72",
+    "pmd_end_exclusive": "5F99",
+    "bytes": 39,
+    "reason": "Dispatcher odvozovaný z kontrolních součtů"
+  },
+  {
+    "pmd_start": "6029",
+    "pmd_end_exclusive": "603C",
+    "bytes": 19,
+    "reason": "Odvozování adresy při smrti"
+  },
+  {
+    "pmd_start": "621A",
+    "pmd_end_exclusive": "62FF",
+    "bytes": 229,
+    "reason": "Původní textová obrazovka prohry"
+  },
+  {
+    "pmd_start": "6318",
+    "pmd_end_exclusive": "631D",
+    "bytes": 5,
+    "reason": "Původní začátek inicializace postavy"
+  },
+  {
+    "pmd_start": "659D",
+    "pmd_end_exclusive": "6800",
+    "bytes": 611,
+    "reason": "Nepoužívaný konec PMD obrazu a výchozí obsah pracovních front"
+  }
+]

@@ -1,0 +1,19 @@
+# Textové soubory ukládat s LF, dávkové soubory Windows s CRLF.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binární obrazy her, grafika a archivy bez textových převodů a slučování.
+*.bin binary
+*.mzf binary
+*.prc binary
+*.scr binary
+*.sna binary
+*.z80 binary
+*.tap binary
+*.ptp binary
+*.png binary
+*.zip binary
+
+# Původní podklady zachovat bajtově, včetně konců řádků textových souborů.
+assets/** -text
