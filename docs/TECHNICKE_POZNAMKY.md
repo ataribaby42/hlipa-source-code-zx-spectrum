@@ -128,7 +128,10 @@ kroky pro dohánění času. Contention a zmeškané IRQ v chráněných grafick
 nikoli záruka stejné rychlosti v každé části hry.
 
 Klávesnice se čte z ULA `$FE`. Původní herní filtr protichůdných směrů je
-zachován. Kempston `$1F` se čte jen po zapnutí v menu; horní bity slouží ještě
+zachován. Q/7/páčka nahoru vede vlevo nahoru, A/6/páčka dolů vpravo dolů,
+O/5/páčka vlevo vlevo dolů a P/8/páčka vpravo vpravo nahoru.
+Mění se pouze převod vstupů na směry původní herní logiky.
+Kempston `$1F` se čte jen po zapnutí v menu; horní bity slouží ještě
 jako dodatečná kontrola neplatného výsledku.
 
 Po dokončení kroku Hlípy zazní krátký beeperový tón na portu
@@ -214,7 +217,7 @@ Celý záznam průchodu ověřuje 104 tichých aktualizací
 pádu, včetně tří přechodů mezi místnostmi, a 27 dopadů s jediným tónem
 (včetně jednoho dopadu na kanál). Samostatná zvuková regrese ověřuje také
 126 příchodů do nových místností bez pípnutí navíc, průchody s drženým směrem
-QAOP (včetně 22 přechodů při drženém P) a tóny prvních kroků uvnitř místností.
+QAOP (včetně 22 přechodů při drženém A) a tóny prvních kroků uvnitř místností.
 `font.py` navíc sestaví dočasnou kopii s upravenými bitmapami H a Í,
 potom ověří jejich vykreslení s vymazanými bitmapami ROM fontu. Kontroluje,
 že sestavení zdrojový BIN nepřepíše a odmítne nesprávnou délku.

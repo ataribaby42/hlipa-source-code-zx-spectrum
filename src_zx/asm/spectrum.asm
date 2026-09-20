@@ -218,50 +218,52 @@ zx_move_tone_delay:
     out ($fe),a
     ret
 ; Bity logiky: 0 vpravo dolů, 1 vlevo nahoru,
-; 2 vpravo nahoru, 3 vlevo dolů. QAOP a kurzorové 5/6/7/8.
+; 2 vpravo nahoru, 3 vlevo dolů. Směry kláves a páčky:
+; Q/7/nahoru vlevo nahoru, A/6/dolů vpravo dolů,
+; O/5/vlevo vlevo dolů, P/8/vpravo vpravo nahoru.
 zx_input:
     ld b,0
     ld a,$fb
     in a,($fe)
     bit 0,a
     jr nz,zx_no_q
-    set 2,b
+    set 1,b
 zx_no_q:
     ld a,$fd
     in a,($fe)
     bit 0,a
     jr nz,zx_no_a
-    set 3,b
+    set 0,b
 zx_no_a:
     ld a,$df
     in a,($fe)
     bit 1,a
     jr nz,zx_no_o
-    set 1,b
+    set 3,b
 zx_no_o:
     bit 0,a
     jr nz,zx_no_p
-    set 0,b
+    set 2,b
 zx_no_p:
     ld a,$ef
     in a,($fe)
     bit 3,a
     jr nz,zx_no_7
-    set 2,b
+    set 1,b
 zx_no_7:
     bit 4,a
     jr nz,zx_no_6
-    set 3,b
+    set 0,b
 zx_no_6:
     bit 2,a
     jr nz,zx_no_8
-    set 0,b
+    set 2,b
 zx_no_8:
     ld a,$f7
     in a,($fe)
     bit 4,a
     jr nz,zx_no_5
-    set 1,b
+    set 3,b
 zx_no_5:
     ; Nepřipojený port může vracet floating bus. Čte se jen po volbě J.
     ld a,(zx_kempston)
@@ -273,19 +275,19 @@ zx_no_5:
     jr nz,zx_keys_ready
     bit 0,c
     jr z,zx_joy_left
-    set 0,b
+    set 2,b
 zx_joy_left:
     bit 1,c
     jr z,zx_joy_down
-    set 1,b
+    set 3,b
 zx_joy_down:
     bit 2,c
     jr z,zx_joy_up
-    set 3,b
+    set 0,b
 zx_joy_up:
     bit 3,c
     jr z,zx_keys_ready
-    set 2,b
+    set 1,b
 zx_keys_ready:
     ld a,b
     ld ($f238),a
@@ -839,8 +841,8 @@ zx_help:
     defb " ZNI",CZ_C," ",CZ_S,"EST PLOXON",CZ_U_KROUZEK,".",13 ; ZNIČ ŠEST PLOXONŮ.
     defb ZX_FALMON_TL,ZX_FALMON_TR,13,ZX_FALMON_BL,ZX_FALMON_BR
     defb " VYH",CZ_Y,"BEJ SE FALMON",CZ_U_KROUZEK,"M.",13,13 ; VYHÝBEJ SE FALMONŮM.
-    defb "Q  VPRAVO NAHORU",13,"A  VLEVO DOL",CZ_U_KROUZEK,13 ; A  VLEVO DOLŮ
-    defb "O  VLEVO NAHORU",13,"P  VPRAVO DOL",CZ_U_KROUZEK,13,13 ; P  VPRAVO DOLŮ
+    defb "Q  VLEVO NAHORU",13,"A  VPRAVO DOL",CZ_U_KROUZEK,13 ; A  VPRAVO DOLŮ
+    defb "O  VLEVO DOL",CZ_U_KROUZEK,13,"P  VPRAVO NAHORU",13,13 ; O  VLEVO DOLŮ
     defb "TAK",CZ_E," KURZOROV",CZ_E," 5 6 7 8",13 ; TAKÉ KURZOROVÉ 5 6 7 8
     defb "1 MENU",13,13
     defb "0 NEBO ENTER: START",0

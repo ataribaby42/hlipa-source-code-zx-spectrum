@@ -58,7 +58,7 @@ class Map:
 
     def neighbors(self,p):
         r,x,y,z=p
-        for key,dx,dy,side in [('O',0,1,0),('P',0,-1,1),('Q',1,0,2),('A',-1,0,3)]:
+        for key,dx,dy,side in [('Q',0,1,0),('A',0,-1,1),('P',1,0,2),('O',-1,0,3)]:
             nx,ny,nz=x+dx,y+dy,z
             if not 0<=nx<8 or not 0<=ny<8:
                 q=self.settle((self.rooms[r]['exits'][side],nx%8,ny%8,z))

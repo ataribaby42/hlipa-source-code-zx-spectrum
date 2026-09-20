@@ -74,7 +74,7 @@ def pmd_raster(p):
 
 def differential():
     total=0
-    for key,bits in [('',0),('Q',4),('A',8),('O',2),('P',1)]:
+    for key,bits in [('',0),('Q',2),('A',1),('O',8),('P',4)]:
         m=start();s=reference();ref_frame(s,0)
         for n in range(18):
             assert bytes(m.memory[0xf135:0xf139])==bytes(s.memory[0xf135:0xf139]),(key,n,'postava')
@@ -132,13 +132,15 @@ def packaging():
 
 def controls_and_lifecycle():
     outcomes={}
-    for key,bits in [('Q',4),('A',8),('O',2),('P',1),('7',4),('6',8),('5',2),('8',1)]:
+    for key in ('Q','A','O','P','7','6','5','8'):
         m=start();m.keys={key};m.run_until(lambda:m.steps()>=13)
         outcomes[key]=m.position()
-    for key,arrow,joy in [('Q','7',8),('A','6',4),('O','5',2),('P','8',1)]:
+    for key,arrow,joy,xy in [('Q','7',8,(3,4)),('A','6',4,(3,1)),
+                             ('O','5',2,(1,3)),('P','8',1,(4,3))]:
         m=start();m.memory[m.labels['zx_kempston']]=1
         m.joystick=joy;m.run_until(lambda:m.steps()>=13)
         assert m.position()==outcomes[key]==outcomes[arrow],key
+        assert m.position()[1:3]==xy,('Nesprávný směr pohybu',key,m.position())
     # Bez zvoleného rozhraní se floating bus nesmí vykládat jako pohyb.
     m=start();m.joystick=15;m.run_until(lambda:m.steps()>=13)
     assert not m.ports[('in',31)]
@@ -149,6 +151,9 @@ def controls_and_lifecycle():
     assert screen_line(m,6)=='KAREL ŠUHAJDA / TOMÁŠ ŠVEC'
     assert screen_line(m,8,start_col=4)=='ZNIČ ŠEST PLOXONŮ.'
     assert screen_line(m,10,start_col=4)=='VYHÝBEJ SE FALMONŮM.'
+    for row,text in enumerate(('Q  VLEVO NAHORU','A  VPRAVO DOLŮ',
+                               'O  VLEVO DOLŮ','P  VPRAVO NAHORU'),12):
+        assert screen_line(m,row)==text,('Popisek ovládání',row,screen_line(m,row))
     assert screen_line(m,18)=='1 MENU'
     m.keys={'J'};m.run_until(lambda:m.at('zx_release'))
     m.keys=set();m.run_until(lambda:m.at('zx_menu_wait'))
@@ -160,7 +165,7 @@ def controls_and_lifecycle():
     assert m.memory[0xf1f0]==0 and m.memory[0xf17d]==0
     m.keys=set()
     # Přirozená smrt při pohybu směrem k nepříteli, uvolnění a nová hra.
-    m.keys={'P'};m.run_until(lambda:m.at('zx_release'),12000000)
+    m.keys={'A'};m.run_until(lambda:m.at('zx_release'),12000000)
     m.keys=set();m.run_until(lambda:m.at('zx_end_wait'))
     assert screen_line(m,2)=='KONEC HRY',screen_line(m,2)
     assert screen_line(m,13)=='NAPROSTO NEMOŽNÝ',screen_line(m,13)
@@ -288,7 +293,7 @@ def falling_sound():
 def death_sound():
     from statistics import median
     # Přirozená smrt kontaktem s nepřítelem, bez zásahu do energie nebo PC.
-    m=start();m.keys={'P'}
+    m=start();m.keys={'A'}
     m.run_until(lambda:m.at('zx_game_over_tick'),12000000)
     # Stav $50 už nemá sprite. $F1F5 je dodatečná prodleva, ne délka animace.
     assert m.memory[0xf138]==0x50 and m.memory[0xa32d+0x50]==0

@@ -15,7 +15,7 @@ from pathlib import Path
 import skoolkit
 from runtime import Machine, BUILD, ROOT
 
-CARDINAL = {'N': 'O', 'S': 'P', 'E': 'Q', 'W': 'A'}
+CARDINAL = {'N': 'Q', 'S': 'A', 'E': 'P', 'W': 'O'}
 
 
 class Player(Machine):

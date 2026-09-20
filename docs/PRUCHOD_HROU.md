@@ -18,10 +18,10 @@ překládají takto:
 
 | Směr v návodu | Klávesa | Směr na obrazovce |
 |---|---|---|
-| sever | O | vlevo nahoru |
-| jih | P | vpravo dolů |
-| východ | Q | vpravo nahoru |
-| západ | A | vlevo dolů |
+| sever | Q | vlevo nahoru |
+| jih | A | vpravo dolů |
+| východ | P | vpravo nahoru |
+| západ | O | vlevo dolů |
 
 Důležitá upřesnění při hraní:
 
@@ -83,13 +83,16 @@ python -B src_zx/tests/replay.py --contended
 Záznam kláves je v [walkthrough.json](../src_zx/tests/data/walkthrough.json).
 Výsledné protokoly, celá posloupnost navštívených místností a snímky výhry
 vznikají v `src_zx/build`. Záznam platí pro binárku SHA-256
-`afa760f266384327ec7283f411333b3c4d6242231daa8fb879353a39e87f525a`.
+`91b8e49138298a65c3e0cbcffb5512b115413f45c2d51caaf86aead2fe51676d`.
 Stejné stisky kláves byly znovu ověřeny i po odstranění PMD rutin, sesunutí kódu
 a úpravě zvuků kroků, dopadů a smrti, včetně odstranění prodlevy po smrtelné
 animaci, pípnutí navíc při přechodu do nové místnosti a při zatočení
 do L. Záznam prošel také po přesunu ukazatelů korunek do vnějších rohů
 obrazovky. Samostatně jsou ověřené [čtyři zkratky přes nízkou zeď](ZKRATKY.md).
 Po změně hry je třeba ověřit, zda se její chování a záznam stále shodují.
+
+Po úpravě ovládání byly klávesy v záznamu převedeny podle tabulky výše.
+Trasa, délky stisků a milníky sběru korunek zůstávají stejné.
 
 Pomocné `walkthrough.py`, `map_routes.py` a `follow_route.py` slouží k hledání
 cest a práci s lokálními checkpointy. Statický model zjednodušuje pohyb,

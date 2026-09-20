@@ -25,17 +25,17 @@ instalaci vývojových nástrojů. Modely +2 a +3 zatím samostatně ověřeny n
 
 ## Ovládání
 
-| Klávesa | Akce |
-|---|---|
-| `0` nebo `Enter` | Start; po konci návrat k nové hře |
-| `Q` / `7` | Vpravo nahoru |
-| `A` / `6` | Vlevo dolů |
-| `O` / `5` | Vlevo nahoru |
-| `P` / `8` | Vpravo dolů |
-| `1` | Návrat do menu; rozehraná hra se zruší |
-| `J` v menu | Zapnutí/vypnutí rozhraní Kempston |
+| Klávesa | Páčka Kempstonu | Pohyb / akce |
+|---|---|---|
+| `0` nebo `Enter` | — | Start; po konci návrat k nové hře |
+| `Q` / `7` | Nahoru | Vlevo nahoru |
+| `A` / `6` | Dolů | Vpravo dolů |
+| `O` / `5` | Vlevo | Vlevo dolů |
+| `P` / `8` | Vpravo | Vpravo nahoru |
+| `1` | — | Návrat do menu; rozehraná hra se zruší |
+| `J` v menu | — | Zapnutí/vypnutí rozhraní Kempston |
 
-Kempston je po načtení vypnutý; směr páčky odpovídá QAOP. Výslovné zapnutí
+Kempston je po načtení vypnutý. Výslovné zapnutí
 brání tomu, aby se hodnoty nepřipojeného portu vykládaly jako pohyb.
 
 Cílem je zničit šest Ploxonů, připomínajících korunky. Hlípa se jich dotkne

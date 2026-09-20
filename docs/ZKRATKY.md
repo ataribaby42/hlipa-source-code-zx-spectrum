@@ -15,7 +15,7 @@ má číslo **36**. Ze schodů lze vystoupit na východní zeď, na souřadnice
 
 ![Hlípa na nízké zdi](zkratka-zed-zx.png)
 
-Směry označují světové strany v mapě: **V = Q, J = P, Z = A, S = O**.
+Směry označují světové strany v mapě: **V = P, J = A, Z = O, S = Q**.
 Posloupnosti níže popisují přechody mezi místnostmi, nikoli každý krok postavy.
 Uvnitř místnosti je někdy třeba obejít zeď nebo překážku.
 Čísla místností jsou interní indexy, které se ve hře nezobrazují.

@@ -81,7 +81,7 @@ def verify_loading(fast_load=True,machine='48'):
         assert m.memory[0xf1f0] == 0
         # Ještě pohyb a návrat do menu: IM2 už používá původní pracovní oblast
         # ROM 128K, ale během hry se nesmí znovu spustit stará obsluha ROM.
-        m.keys={'Q'};m.run_until(lambda:m.steps()>=63)
+        m.keys={'P'};m.run_until(lambda:m.steps()>=63)
         assert m.position()[1]!=3
         m.keys={'1'};m.run_until(lambda:m.at('zx_menu_wait'))
         m.keys={'0'};m.run_until(lambda:m.at('zx_tick'))
