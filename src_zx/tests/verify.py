@@ -107,8 +107,8 @@ def packaging():
         checksum=0
         for v in t:checksum^=v
         assert checksum==0;blocks.append(t)
-    assert pos==len(b) and len(blocks)==10
-    assert [part[0] for part in blocks]==[0,255]*5
+    assert pos==len(b) and len(blocks)==12
+    assert [part[0] for part in blocks]==[0,255]*6
     loader=(BUILD/'tape_loader.bin').read_bytes()
     assert blocks[3][1:-1]==loader
     assert int.from_bytes(blocks[2][14:16],'little')==0x5f00
@@ -122,11 +122,18 @@ def packaging():
     assert len(font)==768 and blocks[9][1:-1]==font
     assert int.from_bytes(blocks[8][12:14],'little')==768
     assert int.from_bytes(blocks[8][14:16],'little')==symbols()['zx_font']
+    labels=symbols()
+    music=(BUILD/'HLIPA.bin').read_bytes()[labels['zx_music_start']-0x5b00:labels['zx_music_end']-0x5b00]
+    assert blocks[11][1:-1]==music
+    assert int.from_bytes(blocks[10][12:14],'little')==len(music)
+    assert int.from_bytes(blocks[10][14:16],'little')==labels['zx_music_start']
     assert (ROOT/'output_zx/HLIPA_CZ_FONT.bin').read_bytes()==font
     sna=(ROOT/'output_zx/HLIPA.sna').read_bytes()
     assert len(sna)==49179 and sna[25]==2
     offset=27+symbols()['zx_font']-0x4000
     assert sna[offset:offset+768]==font
+    offset=27+labels['zx_music_start']-0x4000
+    assert sna[offset:offset+len(music)]==music
     sp=int.from_bytes(sna[23:25],'little')
     assert int.from_bytes(sna[27+sp-16384:29+sp-16384],'little')==symbols()['zx_boot']
 
@@ -176,7 +183,7 @@ def controls_and_lifecycle():
     assert bytes(m.memory[0x6000:m.labels['pmd_image_end']])==immutable
     # Cílová obrazovka: nastaví se pouze doložený bitový stav šesti cílů.
     m.keys=set();m.memory[0xf17d]=63
-    m.step();m.run_until(lambda:m.at('zx_end_wait'))
+    m.step();m.run_until(lambda:m.at('zx_music_start'))
     m.screenshot(BUILD/'zx-victory.png')
     assert set(p for kind,p in m.ports if kind=='out')=={254}
     assert all(value in (0,16) for _,value in m.audio), 'Zvuk mění černý okraj.'
@@ -380,7 +387,7 @@ def teleports_and_ploxons():
             m.run_until(lambda:m.at('zx_tick'))
             m.step();m.run_until(lambda:m.at('zx_tick'))
             m.screenshot(BUILD/'zx-crown.png')
-    m.run_until(lambda:m.at('zx_end_wait'))
+    m.run_until(lambda:m.at('zx_music_start'))
     assert m.memory[0xf17d]==63
     return {'teleports':count,'ploxon_rooms':rooms,'victory_after_six_contacts':True}
 

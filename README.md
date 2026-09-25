@@ -14,6 +14,9 @@ obrazovky, klávesnice a přerušení pro Spectrum. Není to emulátor PMD.
 - **[output_zx/HLIPA.tap](output_zx/HLIPA.tap)**: připojit jako pásku,
   na 48K zadat `LOAD ""` a spustit přehrávání. Na původním Spectru 128K
   lze rovnou zvolit **Tape Loader** v úvodním menu. Hra se spustí automaticky.
+- **[Test před poslední korunkou](output_zx/HLIPA_pred_posledni_korunkou.z80)**:
+  otevřít v emulátoru ZX Spectrum 48K a nemačkat pohybové klávesy.
+  Asi za sekundu se dokončí poslední sběr a zazní hudba na vítězné obrazovce.
 
 TAP během načítání zobrazí dodaný [úvodní obrázek](docs/nahravaci-obrazek-zx.png).
 Po načtení se otevře menu. Kresba je vystředěna a mírně zmenšena pro rozlišení
@@ -44,6 +47,9 @@ mezi místnostmi.
 Šest původních korunek je rozmístěno u vnějších okrajů obrazovky: po jedné
 v horních rozích a po dvou v dolních. Sebranou korunku obklopí paprsky podle PMD verze. Vítězná obrazovka obsahuje původní blahopřání
 z přiloženého obrázku a všech šest korunek s paprsky označujícími sebrání.
+Na vítězné obrazovce hraje původní hudba v převodu pro beeper od Busy soft
+z `hlipa-hudba-3.zip`. Opakuje se až do stisku `Enter` nebo `0`,
+který ji ukončí a přejde k nové hře.
 Menu a závěrečné texty používají českou
 diakritiku z vlastního 768bajtového fontu s 15 českými verzálkami.
 Všechny textové znaky se čtou z tohoto souboru, bitmapy z ROM se nepoužívají.
@@ -65,8 +71,10 @@ obrazovka. Hrací plocha má původních 192 × 192 bodů, uprostřed obrazovky
 Spectra, bez zmenšování. V tabulce je zachováno všech 256 záznamů místností.
 
 Nepoužívané PMD rutiny jsou odstraněné a zachovaný kód je uložený bez mezer.
-Volná paměť má **1999 bajtů**, z toho **1792 bajtů v jednom bloku**.
-TAP má **33789 bajtů**; pracovní paměť si hra připraví až po načtení.
+Hudba včetně přehrávače a pracovních proměnných zabírá **1727 bajtů**
+v souvislém bloku `$F700–$FDBE`. Volná paměť má **265 bajtů**:
+200 bajtů za hlavním kódem a 65 bajtů za hudbou.
+TAP má **35558 bajtů**; pracovní paměť hry se připraví až po načtení.
 
 Automatické zkoušky vykonávají skutečný sestavený Z80 program:
 
@@ -79,6 +87,8 @@ Automatické zkoušky vykonávají skutečný sestavený Z80 program:
 - 192 případů rychlého zatočení přes klávesnici a Kempston má jeden tón za dokončený krok;
 - ověřeno ovládání, přepínače, smrt, restart, české texty a deset případů
   závěrečných statistik včetně tvarů „místnost“, „místnosti“ a „místností“;
+- celá vítězná skladba má shodných 185087 zápisů na zvukový port i jejich
+  časování s dodaným přehrávačem; ověřeno opakování, Enter, nula a další výhra;
 - TAP prošel BASIC/ROM zavaděčem se zrychleným přenosem i čtením páskových
   impulzů; úvodní obrazovka včetně atributů zůstala zachována před načtením
   hlavního kódu i po něm; z TAP i SNA následně naběhlo menu a hra;
@@ -95,7 +105,7 @@ plná síla 31. Stejný záznam prošel i s modelováním contention.
 První tři korunky vycházejí z dodaného návodu, další cesta byla nalezena
 samostatně. Podrobnosti jsou v [záznamu průchodu](docs/PRUCHOD_HROU.md).
 
-Původní hudba, hodiny/budík, rolovaný návod a původní grafická podoba koncových
+Hodiny/budík, rolovaný návod a původní grafická podoba koncových
 obrazovek zatím převedeny nejsou. Menu a koncové obrazovky mají nové rozložení
 s českým písmem. Po dokončení kroku Hlípy zazní krátké pípnutí. Změna směru během animace
 nepřidá pípnutí navíc. Samotné zobrazení nové místnosti nepípá; zvuk zazní
@@ -131,6 +141,7 @@ Sestavení funguje bez sítě a znovu vytvoří TAP i SNA z aktuálních ASM zdr
 | `src_zx/asm/main.asm` | Rozložení paměti, vstup, IM2 |
 | `src_zx/asm/game.asm` | Rekonstruovaná původní logika a data, adresy PMD v komentářích |
 | `src_zx/asm/spectrum.asm` | Nativní obsluha Spectra |
+| `src_zx/asm/music.asm` | Vítězná hudba a beeperový přehrávač od Busy soft |
 | `src_zx/data/font_cz.bin` | Upravitelný font 768 bajtů skutečně používaný ve hře |
 | `src_zx/asm/czech_font.asm` | Mapování českých písmen na kódy v BIN fontu |
 | `src_zx/asm/menu_icons.asm` | Ikonky Ploxona a Falmona pro hlavní menu |
@@ -161,6 +172,8 @@ python -B src_zx/tests/loading.py --machine 128
 python -B src_zx/tests/loading.py --machine 128 --no-fast-load
 python -B src_zx/tests/replay.py
 python -B src_zx/tests/replay.py --contended
+python -B src_zx/tests/replay.py --snapshot
+python -B src_zx/tests/music.py
 python -B src_zx/tests/compaction.py
 python -B src_zx/tests/shortcuts.py
 python -B src_zx/tests/shortcuts.py --contended
@@ -172,6 +185,9 @@ Průchod vytváří také `walkthrough-verification.json` a variantu
 Zkratky vytvářejí `shortcuts-verification.json` a variantu s `-contended`.
 Ověření upraveného BIN fontu zapisuje `font-verification.json`.
 Kontrola kompaktního kódu a volné paměti zapisuje `compaction-verification.json`.
+Test hudby zapisuje `music-verification.json`. Volba `replay.py --snapshot`
+znovu vytvoří testovací snapshot před poslední korunkou přímo průchodem hrou;
+nevyžaduje dříve uložené checkpointy. Jeho načtení a dokončení hry ověřuje `music.py`.
 Varianta načítání bez přímého nahrání bloků zapisuje `loading-verification-sampled.json`.
 Zkoušky modelu 128K přidávají do názvu protokolu `-128`.
 
@@ -183,3 +199,10 @@ Další podrobnosti uvádí [technické poznámky](docs/TECHNICKE_POZNAMKY.md).
 
 Podklady v `assets` pocházejí z uživatelem dodaných verzí hry. Originální autorství
 zůstává zachováno; tento projekt nepřiděluje původní hře novou licenci.
+
+## Autoři a poděkování
+
+- **Karel Šuhajda a Tomáš Švec (KASUHA SOFTWARE)** — původní autoři hry Hlípa.
+- **Busy** — autor převodu původní hudby z PMD 85 pro beeper ZX Spectra.
+
+Děkujeme za původní hru a za převod hudby, který doprovází vítěznou obrazovku.

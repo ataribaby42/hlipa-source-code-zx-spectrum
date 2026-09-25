@@ -1,6 +1,6 @@
 ; Samostatný zavaděč nad RAMTOP BASICu ($5EFF), pod hlavním kódem ($6000).
 ; $5B00–$5BFF zůstává při načítání volné pro systémové rutiny Spectra 128K.
-; ROM LD-BYTES načte obrázek, hlavní kód a samostatný 768bajtový font.
+; ROM LD-BYTES načte obrázek, hlavní kód, 768bajtový font a vítěznou hudbu.
 ; Přímé čtení bloků nekreslí jejich názvy přes obrázek. Konstanty předává build.py.
     org $5f00
 tape_start:
@@ -13,6 +13,9 @@ tape_load_code:
     call tape_load_block
     ld ix,HLIPA_FONT_ADDRESS
     ld de,768
+    call tape_load_block
+    ld ix,HLIPA_MUSIC_ADDRESS
+    ld de,HLIPA_MUSIC_BYTES
     call tape_load_block
     jp HLIPA_ENTRY
 

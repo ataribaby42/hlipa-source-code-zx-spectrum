@@ -33,6 +33,8 @@ zx_extension_space:
 zx_font:
     incbin "src_zx/data/font_cz.bin"
 zx_font_end:
+    ; Přehrávač, skladba a pracovní bajty v původní souvislé rezervě.
+    include "music.asm"
     defs $a300-($-program_start),0
     defs 257,$5b
     defs $a4f0-($-program_start),0

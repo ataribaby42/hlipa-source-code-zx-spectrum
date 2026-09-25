@@ -822,7 +822,11 @@ zx_win:
     call zx_print
     call zx_crowns ; Vítězství zachová všech šest korunek včetně paprsků.
     call zx_release
-    jr zx_end_wait
+    call zx_music_start
+    ; Přehrávač vrací EI; před novou hrou ztišit výstup beeperu.
+    xor a
+    out ($fe),a
+    jp zx_restart
 zx_release:
     call zx_wait_frame
     call zx_any_key

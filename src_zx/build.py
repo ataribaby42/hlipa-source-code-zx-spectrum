@@ -20,11 +20,11 @@ def header(kind,name,length,param1,param2):
 def number(n):
     return str(n).encode()+b'\x0e\x00\x00'+struct.pack('<H',n)+b'\x00'
 
-def make_tap(code,screen,loader,font,font_address):
+def make_tap(code,screen,loader,font,font_address,music,music_address):
     # CLEAR $5EFF ponechá BASIC a zásobník ROM pod zavaděčem na $5F00.
     # Obsluhu IM2 do bufferu tiskárny $5B00 instaluje až nativní start.
     # První CODE obsahuje jen zavaděč; ten bez textového výpisu načte obrázek
-    # hlavní kód a BIN font. Systémové rutiny 128K na $5B00 zůstanou nedotčené.
+    # hlavní kód, BIN font a hudbu. Systémové rutiny 128K na $5B00 zůstanou nedotčené.
     line=(b'\xfd '+number(TAPE_LOADER-1)+b':\xe7 '+number(0)+b':\xda '+number(0)
           +b':\xd9 '+number(7)+b':\xdc '+number(1)+b':\xfb'
           +b':\xef ""\xaf:\xf9 \xc0 '+number(TAPE_LOADER)+b'\r')
@@ -33,7 +33,8 @@ def make_tap(code,screen,loader,font,font_address):
             +header(3,'ZAVADEC',len(loader),TAPE_LOADER,32768)+block(255,loader)
             +header(3,'OBRAZEK',len(screen),16384,32768)+block(255,screen)
             +header(3,'HLIPA',len(code),24576,32768)+block(255,code)
-            +header(3,'HLIPA FONT',len(font),font_address,32768)+block(255,font))
+            +header(3,'HLIPA FONT',len(font),font_address,32768)+block(255,font)
+            +header(3,'HUDBA',len(music),music_address,32768)+block(255,music))
 
 def make_sna(image,entry):
     ram=bytearray(49152)
@@ -62,6 +63,9 @@ def build():
     assert labels['zx_font']==0xf400 and labels['zx_font_end']-labels['zx_font']==768
     assert image[labels['zx_font']-0x5b00:labels['zx_font_end']-0x5b00]==font
     assert labels['zx_native_end']<=0xc59d, 'Kód zasahuje do pracovních masek.'
+    assert labels['zx_music_start']==labels['zx_font_end']==0xf700
+    assert labels['zx_music_start']<labels['zx_music_end']<=0xfe00, 'Hudba zasahuje do IM2.'
+    music=image[labels['zx_music_start']-0x5b00:labels['zx_music_end']-0x5b00]
     assert image[0xa300:0xa401]==b'\x5b'*257
     screen=(SRC/'data/loading.scr').read_bytes()
     assert len(screen)==6912
@@ -69,10 +73,13 @@ def build():
     subprocess.run([assembler,'-b','-m',f'-DHLIPA_ENTRY={entry}',
                     f'-DHLIPA_CODE_BYTES={len(code)}',
                     f'-DHLIPA_FONT_ADDRESS={labels["zx_font"]}',
+                    f'-DHLIPA_MUSIC_ADDRESS={labels["zx_music_start"]}',
+                    f'-DHLIPA_MUSIC_BYTES={len(music)}',
                     '-Osrc_zx/build','-otape_loader.bin','src_zx/asm/tape_loader.asm'],check=True,cwd=ROOT)
     loader=(BUILD/'tape_loader.bin').read_bytes()
     assert 0<len(loader)<=0x6000-TAPE_LOADER, 'Zavaděč zasahuje do hlavního kódu.'
-    for ext,data in [('tap',make_tap(code,screen,loader,font,labels['zx_font'])),('sna',make_sna(image,entry))]:
+    for ext,data in [('tap',make_tap(code,screen,loader,font,labels['zx_font'],music,labels['zx_music_start'])),
+                     ('sna',make_sna(image,entry))]:
         (OUT/f'HLIPA.{ext}').write_bytes(data)
     (OUT/'HLIPA_CZ_FONT.bin').write_bytes(font)
     report={'entry':entry,'load_address':0x6000,'ram_top':0xffff,'machine':'ZX Spectrum 48K',
@@ -80,8 +87,12 @@ def build():
         'code_end':labels['zx_native_end'],
         'free_regions':[{'start':labels['zx_native_end'],'end_exclusive':0xc59d,
                          'bytes':0xc59d-labels['zx_native_end']},
-                        {'start':labels['zx_font_end'],'end_exclusive':0xfe00,
-                         'bytes':0xfe00-labels['zx_font_end']}],
+                        {'start':labels['zx_music_end'],'end_exclusive':0xfe00,
+                         'bytes':0xfe00-labels['zx_music_end']}],
+        'music_address':labels['zx_music_start'],'music_bytes':len(music),
+        'music_player_bytes':labels['zx_music_code_end']-labels['zx_music_start'],
+        'music_data_bytes':labels['zx_music_data_end']-labels['zx_music_code_end'],
+        'music_work_bytes':labels['zx_music_end']-labels['zx_music_data_end'],
         'font_address':labels['zx_font'],'font_bytes':len(font),
         'font_sha256':hashlib.sha256(font).hexdigest(),
         'loading_screen_bytes':len(screen),'tape_loader_bytes':len(loader),

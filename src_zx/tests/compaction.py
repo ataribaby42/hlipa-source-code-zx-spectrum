@@ -25,7 +25,7 @@ def verify_compaction():
     assert labels['pmd_image_end']==0xc800-sum(b-a for a,b in ranges)
     assert labels['pmd_image_end']==labels['zx_boot']
 
-    regions=[(labels['zx_native_end'],0xc59d),(labels['zx_font_end'],0xfe00)]
+    regions=[(labels['zx_native_end'],0xc59d),(labels['zx_music_end'],0xfe00)]
     instances=[]
 
     class GuardedPlayer(Player):

@@ -45,24 +45,26 @@ Tři adresní rozdíly odvozující přístup ke stavu hry jsou nyní výrazy se
 | `$6000–$A8E1` | Grafika, mapa a zachovaná PMD data |
 | `$A8E2–$B9E6` | Kompaktní PMD herní kód |
 | `$B9E7–$BAF8` | Řídicí tabulky a konstanty |
-| `$BAF9–$C4CD` | Nativní obsluha Spectra, texty a ikonky menu |
-| `$C4CE–$C59C` | Volná rezerva, 207 bajtů |
+| `$BAF9–$C4D4` | Nativní obsluha Spectra, texty a ikonky menu |
+| `$C4D5–$C59C` | Volná rezerva, 200 bajtů |
 | `$C59D–$C7FF` | Pracovní masky a fronty, 611 bajtů |
 | `$C800–$DFFF` | Původní pracovní obraz 192 × 192, 6 bodů v bajtu |
 | `$E000–$EFFF` | Kolizní prostor; využity zejména konce 64bajtových řádků |
 | `$F000–$F3FF` | Původní pracovní proměnné |
 | `$F400–$F6FF` | Font `font_cz.bin`, 768 bajtů |
-| `$F700–$FDFF` | Souvislá volná rezerva, 1792 bajtů |
+| `$F700–$FDBE` | Vítězná hudba: přehrávač, data a pět pracovních bajtů, celkem 1727 bajtů |
+| `$FDBF–$FDFF` | Volná rezerva, 65 bajtů |
 | `$FE00–$FF00` | 257 bajtů `$5B`, vektory IM2 na `$5B5B` |
 | `$FF01–$FFEF` | Zásobník, počáteční SP `$FFF0` |
 
-TAP má deset bloků: vždy hlavičku a data pro BASIC, samostatný zavaděč,
-úvodní obrázek, herní kód a font. BASIC nastaví černý okraj a papír, bílý inkoust
-a `CLEAR 24319` (`$5EFF`). Na `$5F00` načte 96 bajtů zavaděče a spustí jej.
+TAP má dvanáct bloků: vždy hlavičku a data pro BASIC, samostatný zavaděč,
+úvodní obrázek, herní kód, font a hudbu. BASIC nastaví černý okraj a papír, bílý inkoust
+a `CLEAR 24319` (`$5EFF`). Na `$5F00` načte 106 bajtů zavaděče a spustí jej.
 Ten pomocí ROM `LD-BYTES` (`$0556`) načte přesně 6912 bajtů obrazovky
-na `$4000`, potom 25806 bajtů hry na `$6000` a 768 bajtů fontu na `$F400`.
+na `$4000`, potom 25813 bajtů hry na `$6000`, 768 bajtů fontu na `$F400`
+a 1727 bajtů hudby na `$F700`.
 Teprve pak skočí na `$BAF9`.
-U všech tří bloků CODE kontroluje součty hlavičky a dat, typ CODE a očekávanou délku;
+U všech čtyř bloků CODE kontroluje součty hlavičky a dat, typ CODE a očekávanou délku;
 při chybě vrací ROM hlášení `R Tape loading error`. Přímé volání ROM
 nevypisuje názvy bloků přes obrázek.
 
@@ -79,9 +81,9 @@ se z pásky nenačítají. Hra už nepoužívá původní přerušení ROM a sam
 nestránkuje RAM ani ROM. BASIC i jeho zásobník jsou pod zavaděčem a hlavní kód
 jej při načítání nepřepíše. SNA obsahuje standardních 49152 bajtů RAM
 a 27bajtovou hlavičku; spouští hru přímo. Velikost SNA zůstává 49179 bajtů.
-Aktuální TAP má 33789 bajtů oproti 48124 bajtům před odstraněním PMD rutin.
+Aktuální TAP má 35558 bajtů oproti 48124 bajtům před odstraněním PMD rutin.
 
-Výslovně vyhrazená volná paměť má celkem **1999 bajtů** ve dvou oblastech.
+Výslovně vyhrazená volná paměť má celkem **265 bajtů** ve dvou oblastech.
 Kontrola při souvislém průchodu zapisuje do rezerv odlišný vzor, ověřuje,
 že obsah neovlivní výsledek hry, a po každé aktualizaci kontroluje, že se
 nezměnil. Oblast `$C59D–$C5FF` není volná: používá ji rutina PMD `$5D34`
@@ -109,8 +111,9 @@ a používá se v závěrečných statistikách.
 Menu má mimo font osm znaků `$80–$87` z `menu_icons.asm`. Skládají dvě
 ikonky 16 × 16 a používají společný kreslič. Ploxon zachovává původní
 pixely spritu PMD `$1928`; Falmon ze spritu `$15A8` je zrcadlený a zmenšený.
-Nativní blok končí na `$C4CE`, před pracovními maskami zbývá 207 bajtů.
-Sestavení hlídá hranici kódu `$C59D` i přesnou délku a umístění fontu.
+Nativní blok končí na `$C4D5`, před pracovními maskami zbývá 200 bajtů.
+Sestavení hlídá hranici kódu `$C59D`, přesnou délku a umístění fontu
+i konec hudby před tabulkou IM2 na `$FE00`.
 Původní kódování PMD textů se nadále zpracovává odděleně.
 
 Původní renderer a maskování spritů píší do obrazu `$C800`. Převod čtyř PMD
@@ -173,8 +176,8 @@ výkřik nespouští. Efekt potřebuje 59 bajtů kódu a dat včetně volání.
   jinou sekvenci jen kvůli novému způsobu zobrazení.
 - Vítězství se kontroluje přes šest bitů na `$F17D`. Nová textová obrazovka
   obsahuje české blahopřání podle dodaného `vyhra.png` a nahrazuje
-  původní závěrečnou prezentaci. Hodiny, budík a původní hudba
-  nejsou součástí této první verze.
+  původní závěrečnou prezentaci. Hudbu přehrává převod od Busy soft
+  z `hlipa-hudba-3.zip`. Hodiny a budík nejsou převedeny.
 - Šest indikátorů kreslí `zx_crowns` přímo do bitmapy Spectra z původních
   PMD dat na `$A437`. PMD vstup `$59D9` se pouze vrací, herní buffer tak
   neobsahuje staré ikonky. Nové souřadnice levého horního rohu včetně paprsků
@@ -241,6 +244,32 @@ historického návodu popisuje [průchod hrou](PRUCHOD_HROU.md).
 proti přehledu odstraněných úseků, návaznost PMD a nativního bloku a celý
 průchod s vyplněnými rezervami. Protokol je `compaction-verification.json`.
 
+`music.py` sestaví aktuální `music.asm` také na původní adrese `$9000`
+a porovná všech 1722 bajtů s `HlipaMusic02.cod` z nedotčeného archivu.
+Dalších pět pracovních bajtů leželo v originálu až za koncem souboru COD;
+v portu se počítají do obsazeného bloku. Přehrávač má 695 bajtů, data 1027.
+Syntaxe je upravena pro z88dk, instrukce a hudební data zůstávají stejné.
+Při přesunu o `$6700` se zachovává i poloha tabulky not v rámci stránky.
+Celá skladba trvá přibližně 149,582 s a má shodných 185087 zápisů na port
+`$FE` i jejich T stavy s originálem v simulátoru bez contention.
+
+Po vykreslení vítězství a uvolnění kláves volá hra `zx_music_start`.
+Samomodifikující přehrávač běží s DI, opakuje skladbu a snímá bit 0
+klávesnicových řádků `$AFFE`: stačí Enter nebo nula. Vrací se s EI,
+hra ztiší beeper a provede běžný restart se zásobníkem `$FFF0`.
+Hudba nepotřebuje AY ani stránkování. Zkoušky obou kláves s contention
+i bez ní kontrolují také nezměněný obraz, ignorování ostatních kláves
+a novou inicializaci hudby při opakovaném vítězství. Celý přehrávací cyklus
+nesmí změnit herní paměť, font ani tabulku IM2. Protokol je
+`src_zx/build/music-verification.json`; nejde o poslech na fyzickém stroji.
+
+Volba `replay.py --snapshot` uloží úplnou RAM a registry po 6251 herních
+aktualizacích do `output_zx/HLIPA_pred_posledni_korunkou.z80`. Jde o stav
+dosažený klávesami, s pěti korunkami a plnou silou v místnosti 171.
+Bez dalšího pohybu následuje poslední sběr za 16 aktualizací, přibližně
+sekundu. `music.py` snapshot znovu načte a ověří sběr i zvuk při modelování
+contention. Náhled je v `src_zx/build/snapshot-posledni-korunka.png`.
+
 Deset případů prohry ověřuje přímo české znaky vykreslené na obrazovku,
 včetně tvarů pro 1, 2, 4 a 5 místností, 23 místností = 9 % podle reference
 a hraničního počtu 256 = 100 %. Zvlášť se kontroluje český titul hry,
@@ -250,7 +279,8 @@ jména autorů, pokyny v menu a text vítězství při souvislém průchodu.
 jej po načtení obrázku a na vstupu hry. V obou bodech porovná všech 6912 bajtů
 obrazovky s předlohou SCR, černý okraj a po načtení i celý strojový kód hry.
 Z takto získané paměti i z distribučního SNA následně běží menu, 50 herních
-aktualizací, pohyb postavy a návrat do menu s novým startem. Prošly modely
+aktualizací, pohyb postavy a návrat do menu s novým startem. Navíc se ověří
+načtený hudební blok, přehrávání při vítězství a další restart. Prošly modely
 48K i původní 128K, oba s přímým nahráním bloků i s `--no-fast-load`, která
 čte simulované páskové impulzy přes ROM. Varianta `--machine 128` spouští
 skutečné 128K ROM, vybere ENTERem úvodní Tape Loader a při dalším běhu
@@ -263,4 +293,5 @@ ověřena v simulaci SkoolKitu, nikoli přímo v Spectaculatoru. Analogový pře
 modely +2/+3 a fyzický hardware zatím samostatně ověřeny nebyly.
 
 Nástroje: [z88dk](https://github.com/z88dk/z88dk),
-[SkoolKit](https://skoolkit.ca/). Ověření vzniklo 20. září 2026.
+[SkoolKit](https://skoolkit.ca/). Původní ověření vzniklo 20. září 2026;
+regrese s vítěznou hudbou a testovací snapshot byly ověřeny 25. září 2026.

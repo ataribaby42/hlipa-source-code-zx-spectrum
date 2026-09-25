@@ -83,12 +83,13 @@ python -B src_zx/tests/replay.py --contended
 Záznam kláves je v [walkthrough.json](../src_zx/tests/data/walkthrough.json).
 Výsledné protokoly, celá posloupnost navštívených místností a snímky výhry
 vznikají v `src_zx/build`. Záznam platí pro binárku SHA-256
-`91b8e49138298a65c3e0cbcffb5512b115413f45c2d51caaf86aead2fe51676d`.
+`247a902017cac572f9b4d1c6d7088cbc4708388e735b92e305d5bb0581a1fc72`.
 Stejné stisky kláves byly znovu ověřeny i po odstranění PMD rutin, sesunutí kódu
 a úpravě zvuků kroků, dopadů a smrti, včetně odstranění prodlevy po smrtelné
 animaci, pípnutí navíc při přechodu do nové místnosti a při zatočení
 do L. Záznam prošel také po přesunu ukazatelů korunek do vnějších rohů
-obrazovky. Samostatně jsou ověřené [čtyři zkratky přes nízkou zeď](ZKRATKY.md).
+obrazovky a 25. září 2026 také po přidání vítězné hudby z `hlipa-hudba-3.zip`.
+Samostatně jsou ověřené [čtyři zkratky přes nízkou zeď](ZKRATKY.md).
 Po změně hry je třeba ověřit, zda se její chování a záznam stále shodují.
 
 Po úpravě ovládání byly klávesy v záznamu převedeny podle tabulky výše.
@@ -99,3 +100,22 @@ cest a práci s lokálními checkpointy. Statický model zjednodušuje pohyb,
 ignoruje nepřátele a sám o sobě není důkazem průchodnosti. Samostatné
 `replay.py` žádné z těchto vyhledávacích funkcí nepoužívá.
 Staré checkpointy z doby před přesunem kódu nejsou s tímto sestavením kompatibilní.
+
+## Test před poslední korunkou
+
+[HLIPA_pred_posledni_korunkou.z80](../output_zx/HLIPA_pred_posledni_korunkou.z80)
+obsahuje úplný stav po 6251 aktualizacích: místnost 171, pozice `(2, 3, 8)`,
+pět korunek a síla 31. Otevřete jej v emulátoru ZX Spectrum 48K a nemačkejte
+pohybové klávesy. Za dalších 16 aktualizací, přibližně sekundu, se dokončí sběr
+poslední korunky a zobrazí se vítězství s hudbou. Enter nebo nula hudbu ukončí.
+
+Snapshot lze z aktuálního sestavení znovu vytvořit a ověřit:
+
+```text
+python -B src_zx/tests/replay.py --snapshot
+python -B src_zx/tests/music.py
+```
+
+Vzniká přímo průchodem od startu; nepoužívá staré checkpointy ani úpravy
+herní paměti. Test jej znovu načítá v simulátoru s contention a kontroluje
+automatický sběr i zvuk z přehrávače.

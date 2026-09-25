@@ -62,6 +62,10 @@ def verify_loading(fast_load=True,machine='48'):
     font=(ROOT/'src_zx/data/font_cz.bin').read_bytes()
     font_start=symbols()['zx_font']
     assert bytes(loaded.ram()[font_start-0x4000:font_start-0x4000+768])==font
+    music_start=symbols()['zx_music_start']
+    music_end=symbols()['zx_music_end']
+    music=(BUILD/'HLIPA.bin').read_bytes()[music_start-0x5b00:music_end-0x5b00]
+    assert bytes(loaded.ram()[music_start-0x4000:music_end-0x4000])==music
     preview=Machine();preview.memory[16384:]=loaded.ram()
     preview.screenshot(BUILD/f'loading-screen{suffix}.png')
     result = {'machine':machine+'K','start_mode':'128K Tape Loader menu' if machine=='128' else '48K BASIC',
@@ -74,6 +78,7 @@ def verify_loading(fast_load=True,machine='48'):
         m = LoadedMachine(snapshot)
         m.run_until(lambda: m.at('zx_menu_wait'))
         assert bytes(m.memory[a] for a in range(font_start,font_start+768))==font
+        assert bytes(m.memory[a] for a in range(music_start,music_end))==music
         m.keys = {'0'}
         m.run_until(lambda: m.at('zx_tick'))
         m.keys = set()
@@ -90,9 +95,18 @@ def verify_loading(fast_load=True,machine='48'):
         assert m.position()[0]==0 and m.memory[0xf17d]==0
         assert m.memory[0xf1f4]==31
         assert bytes(m.memory[a] for a in range(font_start,font_start+768))==font
+        # Hudba musí být přítomná i spustitelná z obou distribučních formátů.
+        m.memory[0xf17d]=63
+        m.run_until(lambda:m.at('zx_music_key'))
+        audio_start=len(m.audio)
+        m.step();m.run_until(lambda:m.at('zx_music_key'))
+        assert any(value==16 for _,value in m.audio[audio_start:])
+        m.keys={'E'};m.run_until(lambda:m.at('zx_tick'))
+        assert m.memory[0xf17d]==0 and m.memory[0xf1f4]==31
         if isinstance(m.memory,Memory):assert m.memory.o7ffd==0x10
         result[name] = {'entry_pc': snapshot.pc, 'menu_and_game_started': True,
                         'game_steps_before_movement':50,'movement_and_restart':True,
+                        'victory_music_and_restart':True,
                         'runtime_machine':snapshot.machine}
     return result
 

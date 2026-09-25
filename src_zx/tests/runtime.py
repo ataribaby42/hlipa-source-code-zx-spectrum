@@ -44,7 +44,8 @@ class Machine:
         pc=self.r[24];self.coverage.add(pc);self.recent.append(pc)
         if not (0x5b00<=pc<0x5c00 or
                 self.labels['pmd_code_start']<=pc<self.labels['pmd_code_end'] or
-                self.labels['zx_boot']<=pc<self.labels['zx_native_end']):
+                self.labels['zx_boot']<=pc<self.labels['zx_native_end'] or
+                self.labels['zx_music_start']<=pc<self.labels['zx_music_code_end']):
             raise AssertionError('PC mimo kód: '+str([(hex(p),disassemble(self.memory,p)[0]) for p in self.recent]))
         self.sim.run()
         if self.r[26] and self.r[25]%self.frame_duration<self.int_active:
