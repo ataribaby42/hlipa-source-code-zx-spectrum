@@ -6,7 +6,6 @@ ROOT=Path(__file__).resolve().parents[1]
 SRC=ROOT/'src_zx'
 BUILD=SRC/'build'
 OUT=ROOT/'output_zx'
-TAPE_LOADER=0x5f00
 
 def block(flag,data):
     b=bytes([flag])+data
@@ -20,17 +19,25 @@ def header(kind,name,length,param1,param2):
 def number(n):
     return str(n).encode()+b'\x0e\x00\x00'+struct.pack('<H',n)+b'\x00'
 
-def make_tap(code,screen,loader,font,font_address,music,music_address):
-    # CLEAR $5EFF ponechá BASIC a zásobník ROM pod zavaděčem na $5F00.
-    # Obsluhu IM2 do bufferu tiskárny $5B00 instaluje až nativní start.
-    # První CODE obsahuje jen zavaděč; ten bez textového výpisu načte obrázek
-    # hlavní kód, BIN font a hudbu. Systémové rutiny 128K na $5B00 zůstanou nedotčené.
-    line=(b'\xfd '+number(TAPE_LOADER-1)+b':\xe7 '+number(0)+b':\xda '+number(0)
-          +b':\xd9 '+number(7)+b':\xdc '+number(1)+b':\xfb'
-          +b':\xef ""\xaf:\xf9 \xc0 '+number(TAPE_LOADER)+b'\r')
-    basic=struct.pack('>H',10)+struct.pack('<H',len(line))+line
+def make_tap(code,screen,font,font_address,music,music_address,entry):
+    # CLEAR $5FFF chrání BASIC a zásobník ROM před kódem od $6000.
+    # Všechny bloky načítá BASIC bez komprese. Oblast ROM 128K na $5B00
+    # zůstává nedotčená; IM2 ji obsadí teprve při nativním startu hry.
+    # POKE 23739,111 přesměruje výstup kanálu S z $09F4 na RET v $096F,
+    # aby názvy dalších bloků nepřepisovaly obrázek. Před USR jej obnovíme.
+    lines=[
+        b'\xfd '+number(24575)+b':\xe7 '+number(0)+b':\xda '+number(0)
+        +b':\xd9 '+number(7)+b':\xdc '+number(1)+b':\xfb',
+        b'\xef "OBRAZEK"\xaa',
+        b'\xf4 '+number(23739)+b','+number(111),
+        b'\xef "HLIPA"\xaf '+number(24576)+b','+number(len(code)),
+        b'\xef "HLIPA FONT"\xaf '+number(font_address)+b','+number(len(font)),
+        b'\xef "HUDBA"\xaf '+number(music_address)+b','+number(len(music)),
+        b'\xf4 '+number(23739)+b','+number(244)+b':\xf9 \xc0 '+number(entry),
+    ]
+    basic=b''.join(struct.pack('>H',i*10)+struct.pack('<H',len(line)+1)+line+b'\r'
+                   for i,line in enumerate(lines,1))
     return (header(0,'HLIPA',len(basic),10,len(basic))+block(255,basic)
-            +header(3,'ZAVADEC',len(loader),TAPE_LOADER,32768)+block(255,loader)
             +header(3,'OBRAZEK',len(screen),16384,32768)+block(255,screen)
             +header(3,'HLIPA',len(code),24576,32768)+block(255,code)
             +header(3,'HLIPA FONT',len(font),font_address,32768)+block(255,font)
@@ -70,15 +77,7 @@ def build():
     screen=(SRC/'data/loading.scr').read_bytes()
     assert len(screen)==6912
     code=image[0x500:labels['zx_native_end']-0x5b00]
-    subprocess.run([assembler,'-b','-m',f'-DHLIPA_ENTRY={entry}',
-                    f'-DHLIPA_CODE_BYTES={len(code)}',
-                    f'-DHLIPA_FONT_ADDRESS={labels["zx_font"]}',
-                    f'-DHLIPA_MUSIC_ADDRESS={labels["zx_music_start"]}',
-                    f'-DHLIPA_MUSIC_BYTES={len(music)}',
-                    '-Osrc_zx/build','-otape_loader.bin','src_zx/asm/tape_loader.asm'],check=True,cwd=ROOT)
-    loader=(BUILD/'tape_loader.bin').read_bytes()
-    assert 0<len(loader)<=0x6000-TAPE_LOADER, 'Zavaděč zasahuje do hlavního kódu.'
-    for ext,data in [('tap',make_tap(code,screen,loader,font,labels['zx_font'],music,labels['zx_music_start'])),
+    for ext,data in [('tap',make_tap(code,screen,font,labels['zx_font'],music,labels['zx_music_start'],entry)),
                      ('sna',make_sna(image,entry))]:
         (OUT/f'HLIPA.{ext}').write_bytes(data)
     (OUT/'HLIPA_CZ_FONT.bin').write_bytes(font)
@@ -95,8 +94,7 @@ def build():
         'music_work_bytes':labels['zx_music_end']-labels['zx_music_data_end'],
         'font_address':labels['zx_font'],'font_bytes':len(font),
         'font_sha256':hashlib.sha256(font).hexdigest(),
-        'loading_screen_bytes':len(screen),'tape_loader_bytes':len(loader),
-        'tape_loader_address':TAPE_LOADER,
+        'loading_screen_bytes':len(screen),'tape_loader':'BASIC','tape_compressed':False,
         'sha256':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(OUT.glob('HLIPA.*'))}}
     (BUILD/'build-report.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
     print('Hotovo: output_zx/HLIPA.tap a output_zx/HLIPA.sna')

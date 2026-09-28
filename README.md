@@ -21,6 +21,11 @@ obrazovky, klávesnice a přerušení pro Spectrum. Není to emulátor PMD.
 TAP během načítání zobrazí dodaný [úvodní obrázek](docs/nahravaci-obrazek-zx.png).
 Po načtení se otevře menu. Kresba je vystředěna a mírně zmenšena pro rozlišení
 256 × 192; během načítání ji nepřepisují názvy dalších bloků pásky.
+Načítání obstarává BASIC příkazy `LOAD ... SCREEN$` a `LOAD ... CODE`,
+bez komprese. `POKE 23739,111` po načtení obrázku dočasně potlačí textový
+výstup do hlavní části obrazovky; `POKE 23739,244` jej před spuštěním hry
+obnoví. Úplný výpis zavaděče a vysvětlení jsou v
+[technických poznámkách](docs/TECHNICKE_POZNAMKY.md).
 
 Použijte standardní ROM a běžnou rychlost zvoleného modelu. Hra využívá pouze
 48K paměti, přídavná paměť ani AY nejsou potřeba. Hotové soubory nevyžadují
@@ -74,7 +79,9 @@ Nepoužívané PMD rutiny jsou odstraněné a zachovaný kód je uložený bez m
 Hudba včetně přehrávače a pracovních proměnných zabírá **1727 bajtů**
 v souvislém bloku `$F700–$FDBE`. Volná paměť má **265 bajtů**:
 200 bajtů za hlavním kódem a 65 bajtů za hudbou.
-TAP má **35558 bajtů**; pracovní paměť hry se připraví až po načtení.
+TAP má **35613 bajtů**. Obrázek, hru, font a hudbu načítá přímo BASIC,
+bez komprese a bez samostatného strojového zavaděče. Pracovní paměť hry
+se připraví až po načtení.
 
 Automatické zkoušky vykonávají skutečný sestavený Z80 program:
 
@@ -145,7 +152,6 @@ Sestavení funguje bez sítě a znovu vytvoří TAP i SNA z aktuálních ASM zdr
 | `src_zx/data/font_cz.bin` | Upravitelný font 768 bajtů skutečně používaný ve hře |
 | `src_zx/asm/czech_font.asm` | Mapování českých písmen na kódy v BIN fontu |
 | `src_zx/asm/menu_icons.asm` | Ikonky Ploxona a Falmona pro hlavní menu |
-| `src_zx/asm/tape_loader.asm` | Načtení hry přes ROM bez přepsání úvodního obrázku |
 | `src_zx/data/loading.scr` | Hotová úvodní obrazovka Spectra, 6912 bajtů |
 | `src_zx/data/pmd_removed.json` | Přehled odstraněných částí původního PMD obrazu |
 | `src_zx/build.py` | Sestavení, BASIC zavaděč a balení TAP/SNA |

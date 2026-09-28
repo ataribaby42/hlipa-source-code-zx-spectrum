@@ -107,26 +107,31 @@ def packaging():
         checksum=0
         for v in t:checksum^=v
         assert checksum==0;blocks.append(t)
-    assert pos==len(b) and len(blocks)==12
-    assert [part[0] for part in blocks]==[0,255]*6
-    loader=(BUILD/'tape_loader.bin').read_bytes()
-    assert blocks[3][1:-1]==loader
-    assert int.from_bytes(blocks[2][14:16],'little')==0x5f00
-    assert 0<len(loader)<=256
-    assert blocks[5][1:-1]==(ROOT/'src_zx/data/loading.scr').read_bytes()
-    assert int.from_bytes(blocks[4][14:16],'little')==0x4000
-    # Obrazovka končí před pracovní oblastí ROM 128K na $5B00.
-    assert int.from_bytes(blocks[4][12:14],'little')==6912
-    assert blocks[7][1:-1]==(BUILD/'HLIPA.bin').read_bytes()[0x500:symbols()['zx_native_end']-0x5b00]
+    assert pos==len(b) and len(blocks)==10
+    assert [part[0] for part in blocks]==[0,255]*5
+    assert blocks[0][1]==0  # BASIC, automatické spuštění na řádku 10.
+    assert int.from_bytes(blocks[0][14:16],'little')==10
+    assert int.from_bytes(blocks[0][12:14],'little')==len(blocks[1])-2
+    assert int.from_bytes(blocks[0][16:18],'little')==len(blocks[1])-2
     font=(ROOT/'src_zx/data/font_cz.bin').read_bytes()
-    assert len(font)==768 and blocks[9][1:-1]==font
-    assert int.from_bytes(blocks[8][12:14],'little')==768
-    assert int.from_bytes(blocks[8][14:16],'little')==symbols()['zx_font']
     labels=symbols()
-    music=(BUILD/'HLIPA.bin').read_bytes()[labels['zx_music_start']-0x5b00:labels['zx_music_end']-0x5b00]
-    assert blocks[11][1:-1]==music
-    assert int.from_bytes(blocks[10][12:14],'little')==len(music)
-    assert int.from_bytes(blocks[10][14:16],'little')==labels['zx_music_start']
+    image=(BUILD/'HLIPA.bin').read_bytes()
+    music=image[labels['zx_music_start']-0x5b00:labels['zx_music_end']-0x5b00]
+    screen=(ROOT/'src_zx/data/loading.scr').read_bytes()
+    assert len(screen)==6912 and len(font)==768
+    # Obsah CODE musí být přímo použitelný, bez komprese či dekompresoru.
+    for i,(name,address,data) in enumerate([
+            ('OBRAZEK',0x4000,screen),
+            ('HLIPA',0x6000,image[0x500:labels['zx_native_end']-0x5b00]),
+            ('HLIPA FONT',labels['zx_font'],font),
+            ('HUDBA',labels['zx_music_start'],music)],1):
+        h,payload=blocks[2*i:2*i+2]
+        assert h[1]==3 and h[2:12]==name.encode().ljust(10,b' ')
+        assert int.from_bytes(h[12:14],'little')==len(data)
+        assert int.from_bytes(h[14:16],'little')==address
+        assert payload[1:-1]==data
+        # Žádný blok nesmí přepsat systémové rutiny ROM 128K na $5B00.
+        assert address+len(data)<=0x5b00 or address>=0x6000
     assert (ROOT/'output_zx/HLIPA_CZ_FONT.bin').read_bytes()==font
     sna=(ROOT/'output_zx/HLIPA.sna').read_bytes()
     assert len(sna)==49179 and sna[25]==2

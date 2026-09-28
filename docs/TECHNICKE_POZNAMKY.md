@@ -40,8 +40,7 @@ Tři adresní rozdíly odvozující přístup ke stavu hry jsou nyní výrazy se
 | `$0000–$3FFF` | Standardní ROM; páskový zavaděč |
 | `$4000–$5AFF` | Bitmapa a atributy Spectra |
 | `$5B00–$5BFF` | Při načítání prostor ROM 128K; za hry obsluha IM2 a nativní proměnné |
-| `$5C00–$5EFF` | BASIC, systémové proměnné a zásobník ROM zavaděče |
-| `$5F00–$5FFF` | Dočasný zavaděč TAP; hra jej nepotřebuje |
+| `$5C00–$5FFF` | BASIC, systémové proměnné a zásobník ROM při načítání |
 | `$6000–$A8E1` | Grafika, mapa a zachovaná PMD data |
 | `$A8E2–$B9E6` | Kompaktní PMD herní kód |
 | `$B9E7–$BAF8` | Řídicí tabulky a konstanty |
@@ -57,31 +56,61 @@ Tři adresní rozdíly odvozující přístup ke stavu hry jsou nyní výrazy se
 | `$FE00–$FF00` | 257 bajtů `$5B`, vektory IM2 na `$5B5B` |
 | `$FF01–$FFEF` | Zásobník, počáteční SP `$FFF0` |
 
-TAP má dvanáct bloků: vždy hlavičku a data pro BASIC, samostatný zavaděč,
-úvodní obrázek, herní kód, font a hudbu. BASIC nastaví černý okraj a papír, bílý inkoust
-a `CLEAR 24319` (`$5EFF`). Na `$5F00` načte 106 bajtů zavaděče a spustí jej.
-Ten pomocí ROM `LD-BYTES` (`$0556`) načte přesně 6912 bajtů obrazovky
-na `$4000`, potom 25813 bajtů hry na `$6000`, 768 bajtů fontu na `$F400`
-a 1727 bajtů hudby na `$F700`.
-Teprve pak skočí na `$BAF9`.
-U všech čtyř bloků CODE kontroluje součty hlavičky a dat, typ CODE a očekávanou délku;
-při chybě vrací ROM hlášení `R Tape loading error`. Přímé volání ROM
-nevypisuje názvy bloků přes obrázek.
+TAP má deset bloků: vždy hlavičku a data pro BASIC, úvodní obrázek,
+herní kód, font a hudbu. Všechny čtyři datové části jsou nekomprimované
+a načítají se příkazy BASICu. Samostatný strojový zavaděč už není potřeba.
+BASIC nastaví černý okraj a papír, bílý inkoust a `CLEAR 24575` (`$5FFF`).
+Program generovaný sestavením odpovídá tomuto zápisu:
+
+```basic
+10 CLEAR 24575: BORDER 0: PAPER 0: INK 7: BRIGHT 1: CLS
+20 LOAD "OBRAZEK" SCREEN$
+30 POKE 23739,111
+40 LOAD "HLIPA" CODE 24576,25813
+50 LOAD "HLIPA FONT" CODE 62464,768
+60 LOAD "HUDBA" CODE 63232,1727
+70 POKE 23739,244: RANDOMIZE USR 47865
+```
+
+Výpis vytváří `src_zx/build.py`; délky bloků, adresy fontu a hudby i vstup
+hry přebírá z aktuálního obrazu a symbolů assembleru. `CLEAR 24575`
+nastaví horní mez paměti BASICu těsně pod hlavní kód. `SCREEN$` načte
+6912 bajtů na `$4000`, další příkazy
+hlavní kód na `$6000`, font na `$F400` a hudbu na `$F700`. ROM zajišťuje
+čtení hlaviček, vyhledání názvů a kontrolní součty; parametry CODE omezují
+adresu a délku načítání. Teprve po dokončení všech bloků se spustí `$BAF9`.
+
+Adresa 23739 (`$5CBB`) leží v tabulce kanálů v RAM a obsahuje dolní bajt
+ukazatele na výstupní rutinu kanálu S, tedy hlavní části obrazovky.
+Horní bajt ukazatele zůstává `$09`. Oba příkazy `POKE` mění tento ukazatel:
+
+| Příkaz | Výstupní rutina | Účinek |
+|---|---|---|
+| `POKE 23739,111` | `$096F` | Instrukce `RET` se ihned vrátí bez kreslení; názvy dalších bloků nepřepisují obrázek. |
+| `POKE 23739,244` | `$09F4` | Obnoví původní textový výstup před `RANDOMIZE USR`. |
+
+Potlačení výpisu je převzaté z dodané úpravy TAPu. Platí od řádku 30
+do řádku 70; vlastní načítání dat přes ROM pokračuje běžným způsobem.
+Změna ukazatele v RAM neupravuje ROM ani obrazová data.
+Komprese ani rozbalovací rutiny z dodaného TAPu se nepoužívají.
 
 Původní společný blok obrázku a zavaděče pokračoval za `$5AFF` do bufferu
 tiskárny `$5B00`. V režimu 128K tam ale běží systémové rutiny přepínání ROM.
 Jejich přepsání způsobovalo reset při návratu z načítání obrázku. Bylo to
-reprodukováno načtením předchozího TAPu z menu původního 128K. Oddělené bloky
-a přesun zavaděče na `$5F00` udržují tuto oblast během načítání nedotčenou.
+reprodukováno načtením staršího TAPu z menu původního 128K. Nynější obrázek
+končí na `$5AFF` a hlavní kód začíná na `$6000`; žádný z načítaných bloků
+do této systémové oblasti nezasahuje.
 
 Obsluha IM2 se do `$5B5B` instaluje až při nativním startu hry, po dokončení
 všech volání ROM zavaděče. Start také vytvoří tabulku IM2 na `$FE00` a vymaže
 pracovní masky a fronty od `$C59D`. Tyto pracovní oblasti ani volné rezervy
 se z pásky nenačítají. Hra už nepoužívá původní přerušení ROM a sama
-nestránkuje RAM ani ROM. BASIC i jeho zásobník jsou pod zavaděčem a hlavní kód
-jej při načítání nepřepíše. SNA obsahuje standardních 49152 bajtů RAM
+nestránkuje RAM ani ROM. BASIC i jeho zásobník zůstávají pod `$6000` a hlavní
+kód je při načítání nepřepíše. SNA obsahuje standardních 49152 bajtů RAM
 a 27bajtovou hlavičku; spouští hru přímo. Velikost SNA zůstává 49179 bajtů.
-Aktuální TAP má 35558 bajtů oproti 48124 bajtům před odstraněním PMD rutin.
+Aktuální TAP má 35613 bajtů, o 55 více než před přechodem na čistý BASIC.
+Samotný BASIC má 268 bajtů. Herní kód, obrázek, font, hudba i SNA zůstaly
+při této změně shodné po jednotlivých bajtech.
 
 Výslovně vyhrazená volná paměť má celkem **265 bajtů** ve dvou oblastech.
 Kontrola při souvislém průchodu zapisuje do rezerv odlišný vzor, ověřuje,
@@ -276,8 +305,12 @@ a hraničního počtu 256 = 100 %. Zvlášť se kontroluje český titul hry,
 jména autorů, pokyny v menu a text vítězství při souvislém průchodu.
 
 `loading.py` nechá SkoolKit provést BASIC/ROM načtení výsledného TAP a zastaví
-jej po načtení obrázku a na vstupu hry. V obou bodech porovná všech 6912 bajtů
+jej po načtení obrázku a na vstupu hry. Pro první bod ukončí pásku po čtvrtém
+bloku a zastaví na vstupu ROM `LD-BYTES` při pokusu o další čtení. V obou
+bodech porovná všech 6912 bajtů
 obrazovky s předlohou SCR, černý okraj a po načtení i celý strojový kód hry.
+Kontroluje také RAMTOP `$5FFF`, zásobník pod hlavním kódem a potlačení
+i následné obnovení výstupu kanálu S.
 Z takto získané paměti i z distribučního SNA následně běží menu, 50 herních
 aktualizací, pohyb postavy a návrat do menu s novým startem. Navíc se ověří
 načtený hudební blok, přehrávání při vítězství a další restart. Prošly modely
@@ -295,3 +328,10 @@ modely +2/+3 a fyzický hardware zatím samostatně ověřeny nebyly.
 Nástroje: [z88dk](https://github.com/z88dk/z88dk),
 [SkoolKit](https://skoolkit.ca/). Původní ověření vzniklo 20. září 2026;
 regrese s vítěznou hudbou a testovací snapshot byly ověřeny 25. září 2026.
+Načítání přímo z BASICu bez komprese bylo ověřeno 28. září 2026 ve všech
+čtyřech variantách testu načítání, včetně pohybu, restartu a vítězné hudby.
+Čisté sestavení bez předchozích mezivýsledků vytvořilo totožné distribuční
+soubory a zachovalo zdrojové soubory. Prošla také kontrola struktury TAP,
+shody jeho nekomprimovaných bloků s původní distribucí a zkouška sestavení
+s upraveným BIN fontem. Toto ověření nepřidává test fyzického hardwaru
+ani samostatného grafického emulátoru.

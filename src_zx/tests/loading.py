@@ -5,7 +5,7 @@ from skoolkit.tap2sna import main as tap2sna
 from skoolkit.simutils import from_snapshot
 from skoolkit.simulator import Simulator
 from skoolkit.pagingtracer import Memory
-import argparse,json,re
+import argparse,json
 from contextlib import chdir
 
 
@@ -35,14 +35,16 @@ def verify_loading(fast_load=True,machine='48'):
     picture = BUILD / f'loading-picture{suffix}.z80'
     converted = BUILD / f'from-tape{suffix}.z80'
     entry=symbols()['zx_boot']
-    loader_labels={m[1]:int(m[2],16) for m in re.finditer(
-        r'^(\w+)\s+= \$([0-9A-F]+)',(BUILD/'tape_loader.map').read_text(),re.M)}
-    picture_ready=loader_labels['tape_load_code']
+    picture_ready=0x0556  # ROM LD-BYTES před čtením další hlavičky.
     expected_screen=(ROOT/'src_zx/data/loading.scr').read_bytes()
     # SkoolKit vykládá dvojtečku v absolutní Windows cestě jako URL schéma.
     with chdir(ROOT):
-        for stop,path in [(picture_ready,picture),(entry,converted)]:
-            tap2sna(['--start',str(stop),'--sim-load-config',f'fast-load={int(fast_load)}',
+        # První běh ukončí pásku po obrázku. Adresu ROM smí zachytit až po
+        # konci pásky, jinak by skončil už při načítání samotného BASICu.
+        for stop,path,extra in [(picture_ready,picture,['--tape-stop','5',
+                                '--sim-load-config','finish-tape=1']),
+                               (entry,converted,[])]:
+            tap2sna(extra+['--start',str(stop),'--sim-load-config',f'fast-load={int(fast_load)}',
                      '--sim-load-config',f'machine={machine}',
                      'output_zx/HLIPA.tap',str(path)])
     # 128K se načítá volbou Tape Loader z úvodního menu (ENTER), nikoli
@@ -53,6 +55,11 @@ def verify_loading(fast_load=True,machine='48'):
         assert snapshot.pc==pc
         assert snapshot.border==0
         assert bytes(snapshot.ram()[:6912])==expected_screen, ('Poškozený obrázek',path.name)
+        ram=snapshot.ram()
+        assert 0x5c00<snapshot.sp<0x6000, ('Zásobník ROM zasahuje do hry',snapshot.sp)
+        assert bytes(ram[23730-0x4000:23732-0x4000])==b'\xff\x5f'  # RAMTOP
+        channel=b'\x6f\x09' if path==picture else b'\xf4\x09'
+        assert bytes(ram[23739-0x4000:23741-0x4000])==channel
         if machine=='128':
             assert snapshot.machine=='128K'
             assert snapshot.out7ffd==0x10, ('Jiná ROM nebo stránka RAM',snapshot.out7ffd)
@@ -71,7 +78,8 @@ def verify_loading(fast_load=True,machine='48'):
     result = {'machine':machine+'K','start_mode':'128K Tape Loader menu' if machine=='128' else '48K BASIC',
               'loading_screen':{'bytes':6912,'before_code_load':True,
                                'after_code_load':True,'black_border':True},
-              'fast_load':fast_load}
+              'fast_load':fast_load,'loader':'BASIC','compressed':False,
+              'rom_stack_below_code':True,'screen_channel_restored':True}
     for name, path in [('tap', converted), ('sna', ROOT / 'output_zx/HLIPA.sna')]:
         snapshot = Snapshot.get(str(path))
         assert snapshot.pc == entry
