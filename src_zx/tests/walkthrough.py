@@ -19,8 +19,8 @@ CARDINAL = {'N': 'Q', 'S': 'A', 'E': 'P', 'W': 'O'}
 
 
 class Player(Machine):
-    def __init__(self, contended=False):
-        super().__init__()
+    def __init__(self, contended=False, variant='HLIPA'):
+        super().__init__(variant=variant)
         self.border = 0
         cpu = skoolkit.CCMIOSimulator if contended else skoolkit.CSimulator
         if cpu is None:

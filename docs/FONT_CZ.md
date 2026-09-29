@@ -48,8 +48,9 @@ editoru. Soubor neobsahuje menu ikonky ani česká malá písmena.
 
 Sestavení načítá přesně 768 bajtů zdrojového BINu, jinou délku odmítne.
 Font vloží do SNA na `$F400–$F6FF`; do TAP přidá samostatný blok
-`HLIPA FONT`, který BASIC načte příkazem
-`LOAD "HLIPA FONT" CODE 62464,768` na stejné místo, bez komprese.
+`HLIPA_FONT`, který BASIC načte příkazem
+`LOAD "HLIPA_FONT" CODE` na stejné místo, bez komprese.
+Adresu i délku načítání převezme ROM z hlavičky bloku.
 Menu, prohra i výhra
 používají tento font z RAM, nikoli bitmapy z ROM. Výherní obrazovka navíc
 zobrazuje všech šest sebraných korunek s paprsky.

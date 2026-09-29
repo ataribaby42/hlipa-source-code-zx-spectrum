@@ -839,6 +839,9 @@ zx_end_wait:
     jp zx_restart
 zx_title:
     defb "HL",CZ_I,"PA",13,"ZX SPECTRUM 48K",13,"ATARIBABY 2026",0 ; HLÍPA
+    IFDEF HLIPA_EN
+    include "text_en_menu.asm"
+    ELSE
 zx_help:
     defb "KASUHA SOFTWARE",13,"KAREL ",CZ_S,"UHAJDA / TOM",CZ_A,CZ_S," ",CZ_S,"VEC",13 ; KAREL ŠUHAJDA / TOMÁŠ ŠVEC
     defb ZX_PLOXON_TL,ZX_PLOXON_TR,13,ZX_PLOXON_BL,ZX_PLOXON_BR
@@ -868,6 +871,7 @@ zx_won:
 zx_lost:
     defb "         KONEC HRY",13,"--------------------------",13,13
     defb "HL",CZ_I,"PA NYN",CZ_I," NAV",CZ_S,"T",CZ_I,"VILA",13,0 ; HLÍPA NYNÍ NAVŠTÍVILA
+    ENDIF
 
 ; Původní bitmapa navštívených místností: dva bloky po 128 bitech.
 zx_count_visits:
@@ -1043,6 +1047,9 @@ zx_visits: defw 0
 zx_percent: defb 0
 zx_collected: defb 0
 zx_all_rooms: defb "256",0
+    IFDEF HLIPA_EN
+    include "text_en_results.asm"
+    ELSE
 zx_rooms_suffix: defb " M",CZ_I,"STNOST",CZ_I," = ",0 ;  MÍSTNOSTÍ =
 zx_few_rooms: defb " M",CZ_I,"STNOSTI = ",0 ; MÍSTNOSTI
 zx_one_room: defb " M",CZ_I,"STNOST = ",0 ;  MÍSTNOST =
@@ -1064,6 +1071,7 @@ zx_rating5: defb "LEP",CZ_S,CZ_I," PR",CZ_U_KROUZEK,"M",CZ_E_HACEK,"R",0 ; LEPŠ
 zx_rating6: defb "DOBR",CZ_Y,0 ; DOBRÝ
 zx_rating7: defb "VELMI DOBR",CZ_Y,0 ; VELMI DOBRÝ
 zx_rating8: defb "VYNIKAJ",CZ_I,"C",CZ_I,0 ; VYNIKAJÍCÍ
+    ENDIF
 
     include "czech_font.asm"
     include "menu_icons.asm"

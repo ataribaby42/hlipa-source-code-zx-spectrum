@@ -14,6 +14,7 @@ def block(flag,data):
     return struct.pack('<H',len(b)+1)+b+bytes([check])
 
 def header(kind,name,length,param1,param2):
+    if len(name.encode('ascii'))>10:raise ValueError('Název bloku TAP smí mít nejvýše 10 znaků.')
     return block(0,bytes([kind])+name.encode('ascii').ljust(10,b' ')+struct.pack('<HHH',length,param1,param2))
 
 def number(n):
@@ -24,24 +25,25 @@ def make_tap(code,screen,font,font_address,music,music_address,entry):
     # Všechny bloky načítá BASIC bez komprese. Oblast ROM 128K na $5B00
     # zůstává nedotčená; IM2 ji obsadí teprve při nativním startu hry.
     # POKE 23739,111 přesměruje výstup kanálu S z $09F4 na RET v $096F,
-    # aby názvy dalších bloků nepřepisovaly obrázek. Před USR jej obnovíme.
+    # aby názvy dalších bloků nepřepisovaly obrázek. Hra má vlastní tisk.
+    # Tokeny nepotřebují mezery; adresy a délky CODE převezme ROM z hlaviček.
     lines=[
-        b'\xfd '+number(24575)+b':\xe7 '+number(0)+b':\xda '+number(0)
-        +b':\xd9 '+number(7)+b':\xdc '+number(1)+b':\xfb',
-        b'\xef "OBRAZEK"\xaa',
-        b'\xf4 '+number(23739)+b','+number(111),
-        b'\xef "HLIPA"\xaf '+number(24576)+b','+number(len(code)),
-        b'\xef "HLIPA FONT"\xaf '+number(font_address)+b','+number(len(font)),
-        b'\xef "HUDBA"\xaf '+number(music_address)+b','+number(len(music)),
-        b'\xf4 '+number(23739)+b','+number(244)+b':\xf9 \xc0 '+number(entry),
+        b'\xe7'+number(0)+b':\xda'+number(0)+b':\xd9'+number(7)
+        +b':\xdc'+number(1)+b':\xdb'+number(0)+b':\xfd'+number(24575),
+        b'\xf4'+number(23739)+b','+number(111),
+        b'\xef"HLIPA_PIC"\xaa',
+        b'\xef"HLIPA"\xaf',
+        b'\xef"HLIPA_FONT"\xaf',
+        b'\xef"HLIPA_MUS"\xaf',
+        b'\xf9\xc0'+number(entry),
     ]
     basic=b''.join(struct.pack('>H',i*10)+struct.pack('<H',len(line)+1)+line+b'\r'
                    for i,line in enumerate(lines,1))
     return (header(0,'HLIPA',len(basic),10,len(basic))+block(255,basic)
-            +header(3,'OBRAZEK',len(screen),16384,32768)+block(255,screen)
+            +header(3,'HLIPA_PIC',len(screen),16384,32768)+block(255,screen)
             +header(3,'HLIPA',len(code),24576,32768)+block(255,code)
-            +header(3,'HLIPA FONT',len(font),font_address,32768)+block(255,font)
-            +header(3,'HUDBA',len(music),music_address,32768)+block(255,music))
+            +header(3,'HLIPA_FONT',len(font),font_address,32768)+block(255,font)
+            +header(3,'HLIPA_MUS',len(music),music_address,32768)+block(255,music))
 
 def make_sna(image,entry):
     ram=bytearray(49152)
@@ -53,16 +55,18 @@ def make_sna(image,entry):
     h[25]=2
     return bytes(h)+ram
 
-def build():
+def build_variant(english=False):
     BUILD.mkdir(parents=True,exist_ok=True);OUT.mkdir(exist_ok=True)
     font=(SRC/'data/font_cz.bin').read_bytes()
     if len(font)!=768:raise SystemExit('Font src_zx/data/font_cz.bin musí mít přesně 768 bajtů.')
     assembler=os.environ.get('Z80ASM') or shutil.which('z80asm') or shutil.which('z88dk-z80asm')
     if not assembler:raise SystemExit('Chybí z88dk-z80asm. Nainstalujte z88dk a přidejte bin do PATH, nebo nastavte Z80ASM.')
-    subprocess.run([assembler,'-b','-m','-Isrc_zx/asm','-Osrc_zx/build','-oHLIPA.bin','src_zx/asm/main.asm'],check=True,cwd=ROOT)
-    image=(BUILD/'HLIPA.bin').read_bytes()
+    name='HLIPA_EN' if english else 'HLIPA'
+    defines=['-DHLIPA_EN'] if english else []
+    subprocess.run([assembler,'-b','-m',*defines,'-Isrc_zx/asm','-Osrc_zx/build',f'-o{name}.bin','src_zx/asm/main.asm'],check=True,cwd=ROOT)
+    image=(BUILD/f'{name}.bin').read_bytes()
     assert len(image)==0xa4f0, f'Neočekávaná délka obrazu: {len(image)}'
-    labels={m[1]:int(m[2],16) for m in re.finditer(r'^(\w+)\s+= \$([0-9A-F]+)',(BUILD/'HLIPA.map').read_text(),re.M)}
+    labels={m[1]:int(m[2],16) for m in re.finditer(r'^(\w+)\s+= \$([0-9A-F]+)',(BUILD/f'{name}.map').read_text(),re.M)}
     entry=labels['zx_boot']
     assert labels['pmd_image_end']==entry
     assert 0x6000<labels['pmd_code_start']<labels['pmd_code_end']<entry
@@ -79,9 +83,10 @@ def build():
     code=image[0x500:labels['zx_native_end']-0x5b00]
     for ext,data in [('tap',make_tap(code,screen,font,labels['zx_font'],music,labels['zx_music_start'],entry)),
                      ('sna',make_sna(image,entry))]:
-        (OUT/f'HLIPA.{ext}').write_bytes(data)
+        (OUT/f'{name}.{ext}').write_bytes(data)
     (OUT/'HLIPA_CZ_FONT.bin').write_bytes(font)
-    report={'entry':entry,'load_address':0x6000,'ram_top':0xffff,'machine':'ZX Spectrum 48K',
+    report={'language':'en' if english else 'cs',
+        'entry':entry,'load_address':0x6000,'ram_top':0xffff,'machine':'ZX Spectrum 48K',
         'image_bytes':len(image),'tape_code_bytes':len(code),
         'code_end':labels['zx_native_end'],
         'free_regions':[{'start':labels['zx_native_end'],'end_exclusive':0xc59d,
@@ -95,9 +100,15 @@ def build():
         'font_address':labels['zx_font'],'font_bytes':len(font),
         'font_sha256':hashlib.sha256(font).hexdigest(),
         'loading_screen_bytes':len(screen),'tape_loader':'BASIC','tape_compressed':False,
-        'sha256':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(OUT.glob('HLIPA.*'))}}
-    (BUILD/'build-report.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
-    print('Hotovo: output_zx/HLIPA.tap a output_zx/HLIPA.sna')
+        'sha256':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(OUT.glob(f'{name}.*'))}}
+    report_name='build-report-en.json' if english else 'build-report.json'
+    (BUILD/report_name).write_text(json.dumps(report,indent=2),encoding='utf-8')
+    print(f'Hotovo: output_zx/{name}.tap a output_zx/{name}.sna')
+    return report
+
+def build():
+    report=build_variant()
+    build_variant(english=True)
     return report
 
 if __name__=='__main__':build()

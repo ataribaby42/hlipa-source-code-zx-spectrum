@@ -9,6 +9,13 @@ obrazovky, klávesnice a přerušení pro Spectrum. Není to emulátor PMD.
 
 ## Spuštění
 
+- **Anglická verze:** [HLIPA_EN.tap](output_zx/HLIPA_EN.tap) a
+  [HLIPA_EN.sna](output_zx/HLIPA_EN.sna). Má přeložené menu, pokyny,
+  statistiky a závěrečné obrazovky; název **HLÍPA**, logo a jména autorů
+  zůstávají původní. [Anglický příběh](story.md) vychází z [českého příběhu](pribeh.md).
+- **[Anglický test před poslední korunkou](output_zx/HLIPA_pred_posledni_korunkou_EN.z80)**:
+  otevřít v emulátoru ZX Spectrum 48K bez stisku pohybových kláves.
+  Poslední sběr, anglická vítězná obrazovka a hudba doběhnou asi za sekundu.
 - **[output_zx/HLIPA.sna](output_zx/HLIPA.sna)**: otevřít jako snapshot
   v emulátoru nastaveném na ZX Spectrum **48K**.
 - **[output_zx/HLIPA.tap](output_zx/HLIPA.tap)**: připojit jako pásku,
@@ -22,9 +29,9 @@ TAP během načítání zobrazí dodaný [úvodní obrázek](docs/nahravaci-obra
 Po načtení se otevře menu. Kresba je vystředěna a mírně zmenšena pro rozlišení
 256 × 192; během načítání ji nepřepisují názvy dalších bloků pásky.
 Načítání obstarává BASIC příkazy `LOAD ... SCREEN$` a `LOAD ... CODE`,
-bez komprese. `POKE 23739,111` po načtení obrázku dočasně potlačí textový
-výstup do hlavní části obrazovky; `POKE 23739,244` jej před spuštěním hry
-obnoví. Úplný výpis zavaděče a vysvětlení jsou v
+bez komprese. `POKE 23739,111` před načtením obrázku potlačí textový
+výstup ROM do hlavní části obrazovky. Hra má vlastní tiskovou rutinu,
+takže výstup ROM není třeba obnovovat. Úplný výpis zavaděče a vysvětlení jsou v
 [technických poznámkách](docs/TECHNICKE_POZNAMKY.md).
 
 Použijte standardní ROM a běžnou rychlost zvoleného modelu. Hra využívá pouze
@@ -79,7 +86,7 @@ Nepoužívané PMD rutiny jsou odstraněné a zachovaný kód je uložený bez m
 Hudba včetně přehrávače a pracovních proměnných zabírá **1727 bajtů**
 v souvislém bloku `$F700–$FDBE`. Volná paměť má **265 bajtů**:
 200 bajtů za hlavním kódem a 65 bajtů za hudbou.
-TAP má **35613 bajtů**. Obrázek, hru, font a hudbu načítá přímo BASIC,
+TAP má **35521 bajtů**. Obrázek, hru, font a hudbu načítá přímo BASIC,
 bez komprese a bez samostatného strojového zavaděče. Pracovní paměť hry
 se připraví až po načtení.
 
@@ -142,12 +149,24 @@ Assembler se hledá v `PATH` pod názvem `z80asm` nebo `z88dk-z80asm`; lze také
 nastavit proměnnou `Z80ASM` na cestu k němu. Musí jít o assembler z88dk,
 nikoli jiný program stejného jména. `build.bat` respektuje také `PYTHON`.
 Sestavení funguje bez sítě a znovu vytvoří TAP i SNA z aktuálních ASM zdrojů.
+Vždy vytvoří českou i anglickou variantu; anglické výstupy mají příponu `_EN`.
+Anglické texty vybírá symbol assembleru `HLIPA_EN`. Obě varianty sdílejí
+herní logiku, obrázek, font a hudbu.
+
+Anglický testovací snapshot se obnoví souvislým průchodem hry:
+
+```text
+python -B src_zx/tests/replay.py --english --snapshot
+python -B src_zx/tests/english.py
+python -B src_zx/tests/loading.py --english --no-fast-load
+```
 
 | Soubor | Účel |
 |---|---|
 | `src_zx/asm/main.asm` | Rozložení paměti, vstup, IM2 |
 | `src_zx/asm/game.asm` | Rekonstruovaná původní logika a data, adresy PMD v komentářích |
 | `src_zx/asm/spectrum.asm` | Nativní obsluha Spectra |
+| `src_zx/asm/text_en_menu.asm`, `src_zx/asm/text_en_results.asm` | Anglické menu, závěrečné texty a statistiky |
 | `src_zx/asm/music.asm` | Vítězná hudba a beeperový přehrávač od Busy soft |
 | `src_zx/data/font_cz.bin` | Upravitelný font 768 bajtů skutečně používaný ve hře |
 | `src_zx/asm/czech_font.asm` | Mapování českých písmen na kódy v BIN fontu |

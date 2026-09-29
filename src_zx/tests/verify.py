@@ -100,8 +100,8 @@ def all_rooms():
         if room%64==0:print('Shoda mistnosti',room,flush=True)
     return hashes
 
-def packaging():
-    b=(ROOT/'output_zx/HLIPA.tap').read_bytes();pos=0;blocks=[]
+def packaging(variant='HLIPA'):
+    b=(ROOT/f'output_zx/{variant}.tap').read_bytes();pos=0;blocks=[]
     while pos<len(b):
         n=int.from_bytes(b[pos:pos+2],'little');t=b[pos+2:pos+2+n];pos+=2+n
         checksum=0
@@ -114,17 +114,17 @@ def packaging():
     assert int.from_bytes(blocks[0][12:14],'little')==len(blocks[1])-2
     assert int.from_bytes(blocks[0][16:18],'little')==len(blocks[1])-2
     font=(ROOT/'src_zx/data/font_cz.bin').read_bytes()
-    labels=symbols()
-    image=(BUILD/'HLIPA.bin').read_bytes()
+    labels=symbols(variant)
+    image=(BUILD/f'{variant}.bin').read_bytes()
     music=image[labels['zx_music_start']-0x5b00:labels['zx_music_end']-0x5b00]
     screen=(ROOT/'src_zx/data/loading.scr').read_bytes()
     assert len(screen)==6912 and len(font)==768
     # Obsah CODE musí být přímo použitelný, bez komprese či dekompresoru.
     for i,(name,address,data) in enumerate([
-            ('OBRAZEK',0x4000,screen),
+            ('HLIPA_PIC',0x4000,screen),
             ('HLIPA',0x6000,image[0x500:labels['zx_native_end']-0x5b00]),
-            ('HLIPA FONT',labels['zx_font'],font),
-            ('HUDBA',labels['zx_music_start'],music)],1):
+            ('HLIPA_FONT',labels['zx_font'],font),
+            ('HLIPA_MUS',labels['zx_music_start'],music)],1):
         h,payload=blocks[2*i:2*i+2]
         assert h[1]==3 and h[2:12]==name.encode().ljust(10,b' ')
         assert int.from_bytes(h[12:14],'little')==len(data)
@@ -133,14 +133,14 @@ def packaging():
         # Žádný blok nesmí přepsat systémové rutiny ROM 128K na $5B00.
         assert address+len(data)<=0x5b00 or address>=0x6000
     assert (ROOT/'output_zx/HLIPA_CZ_FONT.bin').read_bytes()==font
-    sna=(ROOT/'output_zx/HLIPA.sna').read_bytes()
+    sna=(ROOT/f'output_zx/{variant}.sna').read_bytes()
     assert len(sna)==49179 and sna[25]==2
-    offset=27+symbols()['zx_font']-0x4000
+    offset=27+symbols(variant)['zx_font']-0x4000
     assert sna[offset:offset+768]==font
     offset=27+labels['zx_music_start']-0x4000
     assert sna[offset:offset+len(music)]==music
     sp=int.from_bytes(sna[23:25],'little')
-    assert int.from_bytes(sna[27+sp-16384:29+sp-16384],'little')==symbols()['zx_boot']
+    assert int.from_bytes(sna[27+sp-16384:29+sp-16384],'little')==symbols(variant)['zx_boot']
 
 def controls_and_lifecycle():
     outcomes={}

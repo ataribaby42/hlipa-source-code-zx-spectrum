@@ -10,17 +10,17 @@ from PIL import Image
 ROOT=Path(__file__).resolve().parents[2]
 BUILD=ROOT/'src_zx/build'
 
-def symbols():
-    return {m[1]:int(m[2],16) for m in re.finditer(r'^(\w+)\s+= \$([0-9A-F]+)',(BUILD/'HLIPA.map').read_text(),re.M)}
+def symbols(variant='HLIPA'):
+    return {m[1]:int(m[2],16) for m in re.finditer(r'^(\w+)\s+= \$([0-9A-F]+)',(BUILD/f'{variant}.map').read_text(),re.M)}
 
 class Machine:
     frame_duration=69888
     int_active=32
-    def __init__(self,contended=False):
-        self.labels=symbols(); self.keys=set();self.ports=Counter();self.audio=[];self.joystick=255
+    def __init__(self,contended=False,variant='HLIPA'):
+        self.labels=symbols(variant); self.keys=set();self.ports=Counter();self.audio=[];self.joystick=255
         self.memory=[0]*65536
         self.memory[:16384]=(Path(skoolkit.__file__).parent/'resources/48.rom').read_bytes()
-        b=(BUILD/'HLIPA.bin').read_bytes();self.memory[0x5b00:0x5b00+len(b)]=b
+        b=(BUILD/f'{variant}.bin').read_bytes();self.memory[0x5b00:0x5b00+len(b)]=b
         from skoolkit.cmiosimulator import CMIOSimulator
         cpu=CMIOSimulator if contended else Simulator
         self.sim=cpu(self.memory,registers={'PC':self.labels['zx_boot']},config={'fast_djnz':False,'fast_ldir':False})
